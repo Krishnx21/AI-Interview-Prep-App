@@ -61,6 +61,21 @@ This project is built with a robust, scalable, and modern technology stack:
 5. **Evaluation**: The app analyzes the user's answers against AI-generated model answers.
 6. **Detailed Feedback**: The user receives a comprehensive report outlining areas of strength and actionable suggestions for improvement.
 
+### The Flow
+```mermaid
+graph LR
+    A[User Input: Job Role/JD] --> B{AI Analysis Engine}
+    B -- Simple Role --> C[Standard Questions]
+    B -- Complex/Custom JD --> D[Tailored Questions]
+    C --> E[Interview Practice Session]
+    D --> E
+    E --> F{AI Evaluation}
+    F -- Strong Answer --> G[Positive Feedback & Tips]
+    F -- Weak Answer --> H[Constructive Feedback & Model Answer]
+    G --> I[Dashboard Analytics Updates]
+    H --> I
+```
+
 ---
 
 ## 🚀 Installation & Setup
