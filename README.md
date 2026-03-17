@@ -177,25 +177,6 @@ AI-Interview-Prep-App/
 - [ ] **Performance Analytics Dashboard**: Visual charts to track improvement over multiple sessions.
 - [ ] **Community Forum**: A space for users to share difficult interview experiences and tips.
 
----
-
-## 📸 Screenshots
-
-*(Replace with actual URLs once the project is deployed or screenshots are taken)*
-
-| Dashboard Overview | Interview Session |
-| :---: | :---: |
-| <img src="https://via.placeholder.com/400x250?text=Dashboard+UI" alt="Dashboard" /> | <img src="https://via.placeholder.com/400x250?text=Interview+Session+UI" alt="Session" /> |
-
-| Feedback & Evaluation | Job Description Setup |
-| :---: | :---: |
-| <img src="https://via.placeholder.com/400x250?text=Feedback+Report+UI" alt="Feedback" /> | <img src="https://via.placeholder.com/400x250?text=Setup+UI" alt="Setup" /> |
-
-- **📊 Progress Dashboard**: Track your interview performance over time with visual analytics and scores.
-- **⏱️ Timed Sessions**: Simulate real interview pressure with customizable time limits per question.
-- **🎙️ Speech-to-Text Integration**: Answer questions verbally for an even more authentic interview practice experience.
-
-
 
 ---
 
