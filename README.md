@@ -195,18 +195,15 @@ AI-Interview-Prep-App/
 - **⏱️ Timed Sessions**: Simulate real interview pressure with customizable time limits per question.
 - **🎙️ Speech-to-Text Integration**: Answer questions verbally for an even more authentic interview practice experience.
 
-## 📜 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
 ## 👤 Author
 
 **Your Name**
-- 🌐 Portfolio: [your-portfolio.com](https://your-portfolio.com)
-- 💼 LinkedIn: [LinkedIn Profile](https://linkedin.com/in/yourusername)
-- 🐈 GitHub: [@yourusername](https://github.com/yourusername)
+
+- 🐈 GitHub: Krishna Sharma 
 
 <p align="center">
   <br>
