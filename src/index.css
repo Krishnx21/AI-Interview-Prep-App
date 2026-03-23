@@ -74,7 +74,7 @@ body {
 
 .glass-card:hover {
   background: var(--bg-glass-hover);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(197, 192, 192, 0.15);
   transform: translateY(-2px);
 }
 
