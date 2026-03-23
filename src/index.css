@@ -7,7 +7,7 @@
   --bg-tertiary: #1c1d29;
   
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
+  --text-secondary: #85ade4;
   --text-tertiary: #64748b;
   
   --accent-blue: #3b82f6;
@@ -15,11 +15,11 @@
   --accent-pink: #ec4899;
   
   --border-glass: rgba(255, 255, 255, 0.08);
-  --bg-glass: rgba(19, 20, 31, 0.7);
+  --bg-glass: rgba(16, 17, 29, 0.7);
   --bg-glass-hover: rgba(28, 29, 41, 0.8);
   
   --shadow-glow-blue: 0 0 40px -10px rgba(59, 130, 246, 0.4);
-  --shadow-glow-purple: 0 0 40px -10px rgba(139, 92, 246, 0.4);
+  --shadow-glow-purple: 0 0 40px -10px rgba(134, 84, 249, 0.4);
   
   /* Radii */
   --radius-sm: 8px;
