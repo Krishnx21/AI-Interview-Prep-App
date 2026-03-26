@@ -3,11 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "npm run dev -w apps/web",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "npm run build -w apps/web && npm run build -w apps/api",
+    "lint": "npm run lint -w apps/web && npm run lint -w apps/api",
+    "preview": "vite preview",
+    "test": "npm run test -w apps/web",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api"
   },
   "dependencies": {
     "clsx": "^2.1.1",
