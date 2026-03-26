@@ -20,6 +20,9 @@ function nowTime() {
 }
 
 export default function InterviewPage() {
+  const [interviewId, setInterviewId] = useState<string | null>(null);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [feedbackSummary, setFeedbackSummary] = useState<string>("");
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -33,8 +36,41 @@ export default function InterviewPage() {
 
   const canSend = useMemo(() => inputValue.trim().length > 0, [inputValue]);
 
-  function send() {
+  async function startSession() {
+    const resp = await fetch("/api/interviews/start", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        userId: "demo-user",
+        title: "Senior Frontend Engineer Mock",
+        role: "Senior Frontend Engineer",
+        company: "DemoCorp",
+        interviewType: "TECHNICAL",
+        mode: "PRACTICE"
+      })
+    });
+    const data = await resp.json();
+    const id = data?.interview?.id ?? null;
+    setInterviewId(id);
+    return id as string | null;
+  }
+
+  async function endSession() {
+    if (!interviewId) return;
+    const resp = await fetch("/api/interviews/end", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ interviewId })
+    });
+    const data = await resp.json();
+    setFinalScore(data?.interview?.overallScore ?? null);
+  }
+
+  async function send() {
     if (!canSend) return;
+    let activeInterviewId = interviewId;
+    if (!activeInterviewId) activeInterviewId = await startSession();
+    if (!activeInterviewId) return;
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       sender: "user",
@@ -43,6 +79,29 @@ export default function InterviewPage() {
     };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
+    await fetch("/api/interviews/submit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        interviewId: interviewId ?? "pending",
+        interviewId: activeInterviewId,
+        question: "Tell me about your project.",
+        answer: userMsg.text,
+        transcript: userMsg.text
+      })
+    });
+
+    const feedbackResp = await fetch("/api/feedback/analyze", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ transcript: userMsg.text, answer: userMsg.text })
+    });
+    const feedbackData = await feedbackResp.json();
+    setFeedbackSummary(
+      typeof feedbackData.feedback === "string"
+        ? feedbackData.feedback
+        : feedbackData.feedback?.summary ?? "Feedback generated."
+    );
 
     if (pendingTimer.current) window.clearTimeout(pendingTimer.current);
     pendingTimer.current = window.setTimeout(() => {
@@ -73,6 +132,12 @@ export default function InterviewPage() {
                 <Button variant="outline" size="icon" aria-label="Voice input" title="Voice input">
                   <Mic className="h-4 w-4" />
                 </Button>
+                <Button variant="secondary" onClick={startSession}>
+                  Start
+                </Button>
+                <Button variant="outline" onClick={endSession} disabled={!interviewId}>
+                  End
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -92,6 +157,12 @@ export default function InterviewPage() {
                 <p className="mt-1 text-sm font-medium">Steady</p>
               </div>
             </div>
+            {(finalScore !== null || feedbackSummary) && (
+              <div className="mt-3 rounded-2xl border border-border bg-black/10 p-4 text-sm">
+                {finalScore !== null && <p className="font-medium">Final Score: {finalScore}/100</p>}
+                {feedbackSummary && <p className="mt-1 text-muted-foreground">{feedbackSummary}</p>}
+              </div>
+            )}
           </CardContent>
         </Card>
 
