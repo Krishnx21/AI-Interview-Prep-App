@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { BarChart3, Clock3, Plus, Target, TrendingUp } from "lucide-react";
 
+import { auth, signOut } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await auth();
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -13,15 +16,25 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your progress snapshot. Next we’ll connect to real interviews + scoring.
+              Signed in as {session?.user?.email ?? "guest"}.
             </p>
           </div>
-          <Link href="/interview">
-            <Button>
-              <Plus className="h-4 w-4" />
-              New interview
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/interview">
+              <Button>
+                <Plus className="h-4 w-4" />
+                New interview
+              </Button>
+            </Link>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/" });
+              }}
+            >
+              <Button variant="outline">Sign out</Button>
+            </form>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">

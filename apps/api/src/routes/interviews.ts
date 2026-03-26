@@ -33,19 +33,6 @@ interviewsRouter.post("/end", async (req, res, next) => {
   }
 });
 
-interviewsRouter.get("/:id", async (req, res, next) => {
-  try {
-    const interview = await prisma.interview.findUnique({
-      where: { id: req.params.id },
-      include: { responses: true, feedbackScores: true }
-    });
-    if (!interview) return res.status(404).json({ error: "Interview not found" });
-    res.json({ interview });
-  } catch (error) {
-    next(error);
-  }
-});
-
 interviewsRouter.get("/history/:userId", async (req, res, next) => {
   try {
     const rows = await prisma.interview.findMany({
@@ -54,6 +41,19 @@ interviewsRouter.get("/history/:userId", async (req, res, next) => {
       take: 20
     });
     res.json({ interviews: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+interviewsRouter.get("/:id", async (req, res, next) => {
+  try {
+    const interview = await prisma.interview.findUnique({
+      where: { id: req.params.id },
+      include: { responses: true, feedbackScores: true }
+    });
+    if (!interview) return res.status(404).json({ error: "Interview not found" });
+    res.json({ interview });
   } catch (error) {
     next(error);
   }
