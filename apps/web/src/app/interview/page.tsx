@@ -83,7 +83,6 @@ export default function InterviewPage() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        interviewId: interviewId ?? "pending",
         interviewId: activeInterviewId,
         question: "Tell me about your project.",
         answer: userMsg.text,
