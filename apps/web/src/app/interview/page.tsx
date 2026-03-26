@@ -1,212 +1,299 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Mic, Send, Video } from "lucide-react";
+import { useMemo } from "react";
+import { ArrowRight, Hammer, Orbit, Sparkles } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useInterviewSessionStore } from "@/store/interview-session";
+import type { FeedbackModel } from "@/types/interview";
 
-type ChatMessage = {
-  id: string;
-  sender: "ai" | "user";
-  text: string;
-  at: string;
-};
-
-function nowTime() {
+function nowTime(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function InterviewPage() {
-  const [interviewId, setInterviewId] = useState<string | null>(null);
-  const [finalScore, setFinalScore] = useState<number | null>(null);
-  const [feedbackSummary, setFeedbackSummary] = useState<string>("");
-  const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "m1",
-      sender: "ai",
-      text: "Welcome to your mock interview. Tell me about a recent project and your role in it.",
-      at: nowTime()
-    }
-  ]);
-  const pendingTimer = useRef<number | null>(null);
+  const {
+    interviewId,
+    stage,
+    question,
+    answer,
+    messages,
+    feedback,
+    finalScore,
+    isSubmitting,
+    error,
+    setInterviewId,
+    setStage,
+    setAnswer,
+    setFeedback,
+    setFinalScore,
+    setSubmitting,
+    setError,
+    pushMessage,
+    reset
+  } = useInterviewSessionStore();
 
-  const canSend = useMemo(() => inputValue.trim().length > 0, [inputValue]);
+  const canSubmit = useMemo(() => answer.trim().length > 0 && !isSubmitting, [answer, isSubmitting]);
 
   async function startSession() {
-    const resp = await fetch("/api/interviews/start", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        userId: "demo-user",
-        title: "Senior Frontend Engineer Mock",
-        role: "Senior Frontend Engineer",
-        company: "DemoCorp",
-        interviewType: "TECHNICAL",
-        mode: "PRACTICE"
-      })
-    });
-    const data = await resp.json();
-    const id = data?.interview?.id ?? null;
-    setInterviewId(id);
-    return id as string | null;
+    try {
+      setError(null);
+      const resp = await fetch("/api/interviews/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          userId: "demo-user",
+          title: "Narrative Forge Mock",
+          role: "Software Engineer",
+          company: "DemoCorp",
+          interviewType: "BEHAVIORAL",
+          mode: "PRACTICE"
+        })
+      });
+      const data = await resp.json();
+      const id = data?.interview?.id ?? null;
+      setInterviewId(id);
+      setStage("raw");
+      return id as string | null;
+    } catch {
+      setError("Unable to start session.");
+      return null;
+    }
   }
 
   async function endSession() {
     if (!interviewId) return;
-    const resp = await fetch("/api/interviews/end", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ interviewId })
-    });
-    const data = await resp.json();
-    setFinalScore(data?.interview?.overallScore ?? null);
+    setSubmitting(true);
+    try {
+      const resp = await fetch("/api/interviews/end", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ interviewId })
+      });
+      const data = await resp.json();
+      setFinalScore(data?.interview?.overallScore ?? null);
+      setStage("polished");
+    } catch {
+      setError("Unable to end session.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  async function send() {
-    if (!canSend) return;
+  async function submitAnswer() {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError(null);
     let activeInterviewId = interviewId;
     if (!activeInterviewId) activeInterviewId = await startSession();
-    if (!activeInterviewId) return;
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      sender: "user",
-      text: inputValue.trim(),
-      at: nowTime()
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setInputValue("");
-    await fetch("/api/interviews/submit", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        interviewId: activeInterviewId,
-        question: "Tell me about your project.",
-        answer: userMsg.text,
-        transcript: userMsg.text
-      })
-    });
+    if (!activeInterviewId) {
+      setSubmitting(false);
+      return;
+    }
 
-    const feedbackResp = await fetch("/api/feedback/analyze", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ transcript: userMsg.text, answer: userMsg.text })
-    });
-    const feedbackData = await feedbackResp.json();
-    setFeedbackSummary(
-      typeof feedbackData.feedback === "string"
-        ? feedbackData.feedback
-        : feedbackData.feedback?.summary ?? "Feedback generated."
-    );
+    const userText = answer.trim();
+    pushMessage({ id: crypto.randomUUID(), sender: "user", text: userText, at: nowTime() });
+    setAnswer("");
 
-    if (pendingTimer.current) window.clearTimeout(pendingTimer.current);
-    pendingTimer.current = window.setTimeout(() => {
-      const aiMsg: ChatMessage = {
+    try {
+      await fetch("/api/interviews/submit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          interviewId: activeInterviewId,
+          question,
+          answer: userText,
+          transcript: userText
+        })
+      });
+
+      const feedbackResp = await fetch("/api/feedback/analyze", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ transcript: userText, answer: userText })
+      });
+      const feedbackData = await feedbackResp.json();
+
+      let parsed: Partial<FeedbackModel> = {};
+      if (typeof feedbackData.feedback === "string") {
+        try {
+          parsed = JSON.parse(feedbackData.feedback) as Partial<FeedbackModel>;
+        } catch {
+          parsed = { summary: String(feedbackData.feedback) };
+        }
+      } else {
+        parsed = feedbackData.feedback as Partial<FeedbackModel>;
+      }
+
+      setFeedback({
+        clarity: Number(parsed.clarity ?? parsed.clarityScore ?? 70),
+        confidence: Number(parsed.confidence ?? parsed.confidenceScore ?? 70),
+        relevance: Number(parsed.relevance ?? parsed.relevanceScore ?? 70),
+        suggestions: parsed.suggestions ?? parsed.suggestedImprovements ?? ["Add quantified business impact."],
+        missingStarParts: parsed.missingStarParts ?? ["Result"],
+        summary: parsed.summary ?? "Feedback generated."
+      });
+
+      pushMessage({
         id: crypto.randomUUID(),
         sender: "ai",
-        text: "Great. What were the hardest trade-offs, and how did you measure success?",
+        text: "Nice start. Tighten your STAR structure and include one measurable impact result.",
         at: nowTime()
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    }, 900);
+      });
+      setStage("repair");
+    } catch {
+      setError("Failed to submit answer.");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const stageOrder = ["prompt", "raw", "repair", "polished"] as const;
+  const stageLabel: Record<(typeof stageOrder)[number], string> = {
+    prompt: "Prompt",
+    raw: "Raw",
+    repair: "Repair",
+    polished: "Polished"
+  };
 
   return (
     <AppShell>
-      <div className="grid gap-6 lg:grid-cols-[1fr_460px]">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-border bg-black/20 p-3">
+          <div className="grid gap-2 md:grid-cols-4">
+            {stageOrder.map((s, i) => {
+              const active = s === stage;
+              return (
+                <div
+                  key={s}
+                  className={
+                    "rounded-xl border px-3 py-2 text-xs transition-colors " +
+                    (active
+                      ? "border-primary/50 bg-primary/15 text-foreground"
+                      : "border-border bg-black/20 text-muted-foreground")
+                  }
+                >
+                  <span className="mr-2 text-[11px] opacity-70">0{i + 1}</span>
+                  {stageLabel[s]}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <CardTitle>Mock interview</CardTitle>
-                <CardDescription>Practice mode (UI only). Next: WebRTC + Whisper + GPT feedback.</CardDescription>
+                <CardTitle>Narrative Forge Session</CardTitle>
+                <CardDescription>
+                  Build answer quality through prompt -&gt; raw -&gt; repair -&gt; polished flow.
+                </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" aria-label="Toggle camera" title="Toggle camera">
-                  <Video className="h-4 w-4" />
+                <Button variant="outline" size="icon" aria-label="Prompt stage">
+                  <Sparkles className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" aria-label="Voice input" title="Voice input">
-                  <Mic className="h-4 w-4" />
+                <Button variant="outline" size="icon" aria-label="Raw stage">
+                  <Orbit className="h-4 w-4" />
                 </Button>
-                <Button variant="secondary" onClick={startSession}>
+                <Button variant="outline" size="icon" aria-label="Repair stage">
+                  <Hammer className="h-4 w-4" />
+                </Button>
+                <Button variant="secondary" onClick={startSession} disabled={Boolean(interviewId)}>
                   Start
                 </Button>
-                <Button variant="outline" onClick={endSession} disabled={!interviewId}>
+                <Button variant="outline" onClick={endSession} disabled={!interviewId || isSubmitting}>
                   End
+                </Button>
+                <Button variant="ghost" onClick={reset}>
+                  Reset
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="aspect-video w-full rounded-2xl border border-border bg-black/30" />
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-border bg-black/10 p-4">
-                <p className="text-xs text-muted-foreground">Pacing</p>
-                <p className="mt-1 text-sm font-medium">Good</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-black/10 p-4">
-                <p className="text-xs text-muted-foreground">Clarity</p>
-                <p className="mt-1 text-sm font-medium">Improve structure</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-black/10 p-4">
-                <p className="text-xs text-muted-foreground">Confidence</p>
-                <p className="mt-1 text-sm font-medium">Steady</p>
+            <div className="rounded-2xl border border-border bg-black/20 p-4">
+              <p className="text-xs text-muted-foreground">Active prompt</p>
+              <p className="mt-1 text-sm font-medium">{question}</p>
+            </div>
+            <div className="mt-4">
+              <Textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Write your answer using STAR (Situation, Task, Action, Result)..."
+              />
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Keep answer under 120 words for first pass.</p>
+                <Button onClick={submitAnswer} disabled={!canSubmit}>
+                  Submit answer <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-            {(finalScore !== null || feedbackSummary) && (
-              <div className="mt-3 rounded-2xl border border-border bg-black/10 p-4 text-sm">
-                {finalScore !== null && <p className="font-medium">Final Score: {finalScore}/100</p>}
-                {feedbackSummary && <p className="mt-1 text-muted-foreground">{feedbackSummary}</p>}
-              </div>
-            )}
+            {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
           </CardContent>
         </Card>
 
         <Card className="flex min-h-[70vh] flex-col">
           <CardHeader className="pb-4">
-            <div className="flex items-end justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Transcript</CardTitle>
-                <CardDescription>Question 1 of 5</CardDescription>
+                <CardTitle>Forge Feedback</CardTitle>
+                <CardDescription>Structural coaching and transcript feed.</CardDescription>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="flex flex-1 flex-col gap-4">
             <div className="flex-1 space-y-3 overflow-auto pr-1">
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl border border-border bg-black/20 p-3">
+                  <p className="text-xs text-muted-foreground">Clarity</p>
+                  <p className="mt-1 text-sm font-medium">{feedback?.clarity ?? 0}/100</p>
+                </div>
+                <div className="rounded-xl border border-border bg-black/20 p-3">
+                  <p className="text-xs text-muted-foreground">Confidence</p>
+                  <p className="mt-1 text-sm font-medium">{feedback?.confidence ?? 0}/100</p>
+                </div>
+                <div className="rounded-xl border border-border bg-black/20 p-3">
+                  <p className="text-xs text-muted-foreground">Relevance</p>
+                  <p className="mt-1 text-sm font-medium">{feedback?.relevance ?? 0}/100</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-black/20 p-3">
+                <p className="text-xs text-muted-foreground">Missing STAR parts</p>
+                <p className="mt-1 text-sm font-medium">{feedback?.missingStarParts.join(", ") ?? "None"}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-black/20 p-3">
+                <p className="text-xs text-muted-foreground">Suggestions</p>
+                <ul className="mt-1 list-disc pl-4 text-sm">
+                  {(feedback?.suggestions ?? ["Submit an answer to get suggestions."]).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              {finalScore !== null && (
+                <div className="rounded-xl border border-primary/40 bg-primary/10 p-3">
+                  <p className="text-xs text-muted-foreground">Final score</p>
+                  <p className="mt-1 text-lg font-semibold">{finalScore}/100</p>
+                </div>
+              )}
+
               {messages.map((m) => (
-                <div key={m.id} className={m.sender === "ai" ? "pr-10" : "pl-10"}>
-                  <div
-                    className={
-                      "rounded-2xl border border-border px-4 py-3 " +
-                      (m.sender === "ai" ? "bg-muted/40" : "bg-primary/15")
-                    }
-                  >
-                    <p className="text-sm leading-6">{m.text}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{m.at}</p>
-                  </div>
+                <div key={m.id} className={"rounded-xl border border-border p-3 text-sm " + (m.sender === "ai" ? "bg-muted/40" : "bg-primary/15")}>
+                  <p>{m.text}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{m.at}</p>
                 </div>
               ))}
             </div>
-
-            <div className="flex gap-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") send();
-                }}
-                placeholder="Type your response…"
-              />
-              <Button onClick={send} disabled={!canSend} size="icon" aria-label="Send">
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </AppShell>
   );
