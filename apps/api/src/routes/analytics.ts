@@ -11,12 +11,15 @@ analyticsRouter.get("/performance/:userId", async (req, res, next) => {
     });
     const scored = interviews.filter((row) => row.overallScore !== null);
     const averageScore =
-      scored.length === 0 ? 0 : scored.reduce((sum, row) => sum + (row.overallScore ?? 0), 0) / scored.length;
+      scored.length === 0
+        ? 0
+        : scored.reduce((sum: number, row: (typeof scored)[number]) => sum + (row.overallScore ?? 0), 0) /
+          scored.length;
     res.json({
       metrics: {
         interviewsCount: interviews.length,
         averageScore: Number(averageScore.toFixed(2)),
-        trend: scored.map((x) => ({ date: x.startedAt, score: x.overallScore })),
+        trend: scored.map((x: (typeof scored)[number]) => ({ date: x.startedAt, score: x.overallScore })),
         weakAreas: ["confidence", "answer-structure"]
       }
     });

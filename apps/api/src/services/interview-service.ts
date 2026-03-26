@@ -1,4 +1,3 @@
-import type { InterviewType, InterviewMode } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 
@@ -26,8 +25,8 @@ export async function startInterview(input: unknown) {
       title: parsed.title,
       role: parsed.role,
       company: parsed.company,
-      interviewType: parsed.interviewType as InterviewType,
-      mode: parsed.mode as InterviewMode
+      interviewType: parsed.interviewType,
+      mode: parsed.mode
     }
   });
 }
