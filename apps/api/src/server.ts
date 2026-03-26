@@ -10,6 +10,7 @@ import { authRouter } from "./routes/auth.js";
 import { feedbackRouter } from "./routes/feedback.js";
 import { interviewsRouter } from "./routes/interviews.js";
 import { resourcesRouter } from "./routes/resources.js";
+import { uploadRouter } from "./routes/upload.js";
 
 const logger = pino({ level: env.NODE_ENV === "production" ? "info" : "debug" });
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/interviews", interviewsRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/resources", resourcesRouter);
+app.use("/api/upload", uploadRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err instanceof ZodError) {
