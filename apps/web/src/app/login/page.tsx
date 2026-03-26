@@ -8,7 +8,7 @@ export default function LoginPage() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
-          <CardDescription>Continue with Google or request an email login link.</CardDescription>
+          <CardDescription>Continue with Google to access your interview workspace.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <form
@@ -18,25 +18,6 @@ export default function LoginPage() {
             }}
           >
             <Button className="w-full">Continue with Google</Button>
-          </form>
-          <form
-            action={async (formData) => {
-              "use server";
-              const email = String(formData.get("email") ?? "");
-              await signIn("email", { email, redirectTo: "/dashboard" });
-            }}
-            className="space-y-2"
-          >
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="h-10 w-full rounded-xl border border-border bg-black/20 px-3 text-sm"
-            />
-            <Button variant="outline" className="w-full">
-              Send magic link
-            </Button>
           </form>
         </CardContent>
       </Card>

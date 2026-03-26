@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import Email from "next-auth/providers/email";
 import Google from "next-auth/providers/google";
 
 const providers = [];
@@ -13,17 +12,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-if (process.env.EMAIL_SERVER && process.env.EMAIL_FROM) {
-  providers.push(
-    Email({
-      server: process.env.EMAIL_SERVER,
-      from: process.env.EMAIL_FROM
-    })
-  );
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET ?? "dev-only-secret-change-me",
   providers,
   pages: {
     signIn: "/login"
