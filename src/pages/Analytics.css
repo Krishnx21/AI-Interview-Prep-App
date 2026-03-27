@@ -112,7 +112,7 @@
 
 .bar:hover {
   filter: brightness(1.2);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 20px rgba(153, 185, 236, 0.4);
 }
 
 .tooltip {
